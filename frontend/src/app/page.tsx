@@ -1,6 +1,42 @@
+"use client";
+import { useEffect, useState } from 'react';
 import { ArrowUpRight, ArrowDownRight, TrendingUp, Activity, DollarSign, BrainCircuit } from 'lucide-react';
 
 export default function Dashboard() {
+  const [livePrices, setLivePrices] = useState<Record<string, number>>({
+    "NIFTY24MAY22000CE": 145.20,
+    "BTC/USDT": 64200.00,
+    "AAPL": 189.50
+  });
+  
+  const [lastUpdatedSymbol, setLastUpdatedSymbol] = useState<string>("");
+
+  useEffect(() => {
+    // Connect to the FastAPI WebSocket
+    const ws = new WebSocket("ws://localhost:8000/ws/market");
+    
+    ws.onmessage = (event) => {
+      try {
+        const message = JSON.parse(event.data);
+        if (message.event === "price_update") {
+          const { symbol, price } = message.data;
+          setLivePrices((prev) => ({
+            ...prev,
+            [symbol]: price
+          }));
+          setLastUpdatedSymbol(symbol);
+          
+          // Reset the highlight after 500ms
+          setTimeout(() => setLastUpdatedSymbol(""), 500);
+        }
+      } catch (e) {
+        console.error("Error parsing websocket message", e);
+      }
+    };
+
+    return () => ws.close();
+  }, []);
+
   return (
     <div className="space-y-6">
       
@@ -45,8 +81,11 @@ export default function Dashboard() {
         {/* Active Positions Table */}
         <div className="lg:col-span-2 glass-card p-6">
           <div className="flex justify-between items-center mb-6">
-            <h3 className="text-lg font-bold">Live Open Positions</h3>
-            <button className="text-sm text-[#eab308] hover:underline">View All</button>
+            <h3 className="text-lg font-bold flex items-center gap-2">
+              <Activity size={18} className="text-[#eab308] animate-pulse" /> 
+              Live Open Positions
+            </h3>
+            <span className="text-xs text-gray-400">Powered by FastAPI WebSockets</span>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-left">
@@ -55,31 +94,27 @@ export default function Dashboard() {
                   <th className="pb-3 font-medium">Asset</th>
                   <th className="pb-3 font-medium">Market</th>
                   <th className="pb-3 font-medium">Side</th>
-                  <th className="pb-3 font-medium">Entry</th>
-                  <th className="pb-3 font-medium text-right">Current PnL</th>
+                  <th className="pb-3 font-medium">Live Price</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#27272a]">
-                <tr>
+                <tr className={lastUpdatedSymbol === "NIFTY24MAY22000CE" ? "bg-[#10b981]/10 transition-colors" : "transition-colors duration-500"}>
                   <td className="py-4 font-bold">NIFTY24MAY22000CE</td>
                   <td className="py-4 text-gray-400">NSE (India)</td>
                   <td className="py-4"><span className="px-2 py-1 bg-[#10b981]/10 text-[#10b981] rounded text-xs font-bold">LONG</span></td>
-                  <td className="py-4 font-mono">₹145.20</td>
-                  <td className="py-4 text-right text-[#10b981] font-bold">+$120.50</td>
+                  <td className="py-4 font-mono font-bold text-[#eab308]">₹{livePrices["NIFTY24MAY22000CE"]?.toFixed(2)}</td>
                 </tr>
-                <tr>
+                <tr className={lastUpdatedSymbol === "BTC/USDT" ? "bg-[#ef4444]/10 transition-colors" : "transition-colors duration-500"}>
                   <td className="py-4 font-bold">BTC/USDT</td>
                   <td className="py-4 text-gray-400">Binance</td>
                   <td className="py-4"><span className="px-2 py-1 bg-[#ef4444]/10 text-[#ef4444] rounded text-xs font-bold">SHORT</span></td>
-                  <td className="py-4 font-mono">$64,200.00</td>
-                  <td className="py-4 text-right text-[#ef4444] font-bold">-$45.20</td>
+                  <td className="py-4 font-mono font-bold text-[#eab308]">${livePrices["BTC/USDT"]?.toFixed(2)}</td>
                 </tr>
-                <tr>
+                <tr className={lastUpdatedSymbol === "AAPL" ? "bg-[#10b981]/10 transition-colors" : "transition-colors duration-500"}>
                   <td className="py-4 font-bold">AAPL</td>
                   <td className="py-4 text-gray-400">NASDAQ</td>
                   <td className="py-4"><span className="px-2 py-1 bg-[#10b981]/10 text-[#10b981] rounded text-xs font-bold">LONG</span></td>
-                  <td className="py-4 font-mono">$189.50</td>
-                  <td className="py-4 text-right text-[#10b981] font-bold">+$22.10</td>
+                  <td className="py-4 font-mono font-bold text-[#eab308]">${livePrices["AAPL"]?.toFixed(2)}</td>
                 </tr>
               </tbody>
             </table>
