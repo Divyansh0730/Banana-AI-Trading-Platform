@@ -377,7 +377,7 @@ async def websocket_endpoint(websocket: WebSocket, token: str = None):
     import redis.asyncio as redis_async
     
     try:
-        redis_client = redis_async.from_url(os.getenv("REDIS_URL", "redis://localhost:6379/0"))
+        redis_client = redis_async.from_url(os.getenv("REDIS_URL", "redis://localhost:6379/0"), decode_responses=True)
         pubsub = redis_client.pubsub()
         await pubsub.subscribe("market_ticks")
         
