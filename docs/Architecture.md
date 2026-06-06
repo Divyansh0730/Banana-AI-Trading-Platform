@@ -1,75 +1,100 @@
-# System Architecture Diagram
-## Product Name: Banana AI Trading Platform (Global & Indian Markets)
+# Banana AI Trading Ecosystem - System Architecture
+## Product Vision: The Ultimate Professional AI Trading Assistant
 
-The architecture is designed to handle multiple asset classes (Crypto, Indian Equity, F&O) via a custom, low-latency API gateway, integrating with both Global and Indian brokers.
+Banana AI is a comprehensive trading ecosystem designed to act as a professional, institutional-grade trading advisor. Instead of blindly executing trades automatically, the system performs deep historical, fundamental, and technical analysis to generate high-confidence trading signals. The user retains full control, manually placing trades (either simulated or real) based on the AI's detailed guidance. 
 
-### High-Level Google Cloud Native Architecture
+The platform is built exclusively on **Microsoft Azure** using zero-cost/free-tier tools to remain cost-effective during the initial scaling phases. It specifically targets the Indian Market (Equities, Futures & Options) via legal brokers (Zerodha, Groww), with a robust Simulated "Paper Trading" ecosystem for training both the user and the AI.
+
+---
+
+### High-Level Azure Native Architecture
 
 ```mermaid
 graph TD
     %% User & Frontend
     User([Trader])
-    UI[Next.js Dashboard \n Firebase Hosting]
-    Telegram[Telegram / WhatsApp Bot \n Alerts]
+    UI[Next.js Dashboard \n Azure Static Web Apps]
     
     User <-->|HTTPS| UI
-    User <-->|Notifications| Telegram
+    User -->|Manual Trade Execution| UI
 
-    %% Auth & Realtime DB (Firebase)
-    Auth[Firebase Auth]
-    RTDB[(Firestore \n Live Portfolio Sync)]
+    %% Auth & Database
+    API[FastAPI Trading Core \n Azure App Service / VM]
+    DB[(PostgreSQL DB \n Azure PostgreSQL Free Tier)]
+    Redis[(Redis Cache \n Live Tick Data)]
     
-    UI --> Auth
-    UI <--> RTDB
-
-    %% Backend API (Cloud Run)
-    API[FastAPI Trading Core \n Google Cloud Run]
-    
-    UI <-->|REST| API
-    Telegram <--> API
-    Auth -.->|JWT Token Validation| API
-
-    %% Databases
-    DB[(Supabase PostgreSQL \n Users, Broker Keys)]
-    BQ[(Google BigQuery \n Market Data Lake)]
-    Storage[(Google Cloud Storage \n AI Models)]
-    
+    UI <-->|REST / WebSockets| API
     API <--> DB
-    API -->|Async Logging| BQ
+    API <--> Redis
 
-    %% Multi-Market Data & Execution
-    subgraph Execution & Data Layer
-        Zerodha[Zerodha / Dhan API \n (NSE, BSE, F&O)]
-        Binance[Binance API \n (Crypto)]
-        OptionChain[Option Chain Data \n (Greeks, PCR, OI)]
+    %% Multi-Market Data Layer
+    subgraph Market Data Layer
+        Zerodha[Zerodha / Groww API \n (NSE, BSE, F&O)]
+        Historical[Historical Data APIs \n (Yahoo Finance / Custom)]
     end
     
-    PubSub[Google Cloud Pub/Sub \n Event Bus]
+    Zerodha -->|Live Ticks| Redis
+    Historical -->|Historical Context| API
+
+    %% AI Advisory Engine
+    subgraph AI Intelligence Layer
+        Gemini[Google Gemini API \n Sentiment & Deep Market Analysis]
+        AIFeedback[(AI Feedback Loop \n Learning Database)]
+    end
+
+    API <-->|Deep Analysis Request| Gemini
+    API -->|Performance Logging| AIFeedback
+
+    %% Execution Ecosystem
+    subgraph Execution Engines
+        Paper[Simulated Trading Engine \n (₹2,00,000 Dummy Wallet)]
+        Live[Real Broker Execution \n (Manual Trigger via Zerodha/Groww)]
+    end
     
-    Zerodha -->|Live Ticks| PubSub
-    Binance -->|WebSockets| PubSub
-    OptionChain --> PubSub
-    PubSub -->|Trigger| API
-    API -->|Execute Indian Trade| Zerodha
-    API -->|Execute Crypto Trade| Binance
-
-    %% AI Layer (FinRL + Vertex + Gemini)
-    Vertex[Vertex AI \n GRU/LSTM + FinRL Agents]
-    Gemini[Google Gemini API \n Sentiment & Options Logic]
-    CloudFunc[Cloud Functions \n Cron Jobs]
-
-    API <-->|High Frequency Prediction| Vertex
-    API <-->|Macro Analysis| Gemini
-    CloudFunc -->|Daily Retraining Trigger| Vertex
+    API -->|Route Simulated Trade| Paper
+    API -->|Route Real Trade| Live
 ```
 
-### Component Breakdown
+---
 
-1.  **Frontend (Next.js)**: Dashboard showing multi-asset portfolios (Crypto + Indian Stocks + Options).
-2.  **Custom FastAPI Backend**: Instead of using Freqtrade (which is crypto-only), we build a custom engine that handles OAuth for Indian brokers (Zerodha/Dhan) and API keys for Crypto (Binance). We will study Freqtrade's source code to implement robust Risk Management logic.
-3.  **Multi-Market Ingestion (Pub/Sub)**: Ingests tick data for NSE, BSE, and Crypto simultaneously. Also fetches complex data like Option Chains (Open Interest, Implied Volatility).
-4.  **Google BigQuery**: The Data Lake. Critical for storing massive Option Chain historical data which is required to train AI on derivatives.
-5.  **AI Layer (FinRL + Gemini)**:
-    *   **FinRL on Vertex AI**: Trains Reinforcement Learning agents that learn to maximize portfolio value across Stocks and Options.
-    *   **Google Gemini**: Used to analyze breaking news (e.g., RBI Repo Rate announcements) and adjust the AI's risk appetite dynamically.
-6.  **Telegram/WhatsApp Bot**: Essential for the Indian market to provide instant trade confirmations and margin alerts.
+### Core Ecosystem Components
+
+#### 1. AI Analysis & Advisory Engine
+The brain of the platform. It does not just look at moving averages; it analyzes the market like a human professional.
+* **Deep Historical Analysis**: Analyzes past performance, corporate events, and historical price action.
+* **Signal Generation**: Provides highly detailed signals to the user:
+  * **Confidence Score (%)**: How sure the AI is about the trade.
+  * **Expected Profit (%)**: The target gain.
+  * **Time Horizon**: The precise time range to enter and exit the trade.
+  * **Risk Indicator**: Analysis of maximum potential loss.
+* **Feedback Loop (AI Learning)**: When a user places a simulated trade based on an AI signal, the system tracks the outcome. If the trade hits the expected profit, the AI reinforces that logic. The AI continuously learns from simulated outcomes to improve its confidence scores.
+
+#### 2. Dual-Mode Trading Ecosystem
+The platform supports two distinct execution environments:
+* **Simulation Mode (Paper Trading)**: 
+  * Every user gets a dummy wallet loaded with ₹2,00,000.
+  * Users can manually place trades using dummy money based on live AI signals.
+  * If the wallet runs out, a simple refresh resets the dummy balance back to ₹2,00,000.
+  * Simulated profits/losses update the dummy wallet in real-time.
+* **Real Broker Integration**:
+  * Integration with Indian legal brokers (Zerodha, Groww).
+  * Users connect their real accounts, fund their real wallets, and place real trades manually through the Banana AI interface when they trust the AI signals.
+
+#### 3. Backend Architecture (Azure Native & Zero-Cost Focused)
+* **Hosting**: Exclusively on Microsoft Azure VMs (or Azure App Service free tiers) to minimize costs. Google Cloud components (Vertex, BigQuery) have been dropped.
+* **Hybrid Core**: Python (FastAPI) handles the complex AI orchestration, business logic, and API endpoints. Rust handles any required low-latency WebSocket streaming.
+* **Database**: PostgreSQL handles User Accounts, Real/Dummy Wallets, Trade History, and AI Feedback Loops.
+
+#### 4. Frontend Application
+* **Next.js Dashboard**: A premium, professional UI where users view deep AI analysis reports, select their investment amounts, toggle between "Simulation" and "Live" modes, and manually execute trades.
+
+---
+
+### Platform Workflow
+
+1. **Market Ingestion**: The backend ingests live ticks and historical data from the Indian Stock Market.
+2. **Deep Analysis**: The AI Engine evaluates the data, determining if a profitable opportunity exists in Equities or Options.
+3. **Signal Broadcast**: A detailed signal card is pushed to the user's dashboard (Action, Confidence, Target Profit, Time Range).
+4. **User Decision**: The user reads the AI's deep analysis and decides the investment amount.
+5. **Manual Execution**: The user clicks "Place Trade". They choose whether this goes to their Simulated Wallet or Real Broker Wallet.
+6. **AI Learning**: The backend monitors the trade's real-time outcome against the AI's initial prediction, feeding the result back into the AI Learning Database to improve future signals.

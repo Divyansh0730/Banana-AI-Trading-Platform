@@ -1,8 +1,10 @@
 @import "tailwindcss";
+@source "../../src";
 
 @theme {
   --color-brand: #eab308;
   --color-brand-hover: #facc15;
+  --color-banana: #FFE55C;
   --color-success: #10b981;
   --color-danger: #ef4444;
   --color-surface: #18181b;
