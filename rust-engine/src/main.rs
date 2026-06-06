@@ -8,7 +8,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     env_logger::init();
     info!("Starting Banana AI Trading Rust Execution Engine (Mock Indian Market Mode)...");
 
-    let redis_client = redis::Client::open("redis://127.0.0.1:6379/")?;
+    let redis_url = std::env::var("REDIS_URL").unwrap_or_else(|_| "redis://redis:6379/".to_string());
+    let redis_client = redis::Client::open(redis_url)?;
     let mut redis_conn = redis_client.get_async_connection().await?;
     info!("Connected to Redis.");
 

@@ -7,7 +7,7 @@ import os
 from dotenv import load_dotenv
 from google import genai
 from sqlalchemy.orm import Session
-from jose import jwt
+from typing import List, Optional
 import database
 import models
 
