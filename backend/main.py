@@ -181,8 +181,7 @@ def get_stats(current_user: models.User = Depends(get_current_user), db: Session
         "initial_balance": initial_balance
     }
 
-# Connect to Binance WebSocket for live market data
-@app.websocket("/ws/market")
+# API Endpoints
 @app.post("/api/v1/wallet/refresh")
 def refresh_wallet(current_user: models.User = Depends(get_current_user), db: Session = Depends(database.get_db)):
     """Reset the dummy paper trading wallet to 2,00,000 INR."""
@@ -256,6 +255,7 @@ def execute_trade(trade_req: TradeRequest, current_user: models.User = Depends(g
 
     return {"status": "success", "message": f"Successfully {trade_req.action} {qty:.4f} of {trade_req.asset}", "new_balance": current_user.balance}
 
+@app.websocket("/ws/market")
 async def websocket_endpoint(websocket: WebSocket, token: str = None):
     await websocket.accept()
     
