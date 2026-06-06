@@ -14,10 +14,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     info!("Connected to Redis.");
 
     let mut stocks = vec![
-        ("RELIANCE.NSE", 2850.50),
-        ("TCS.NSE", 3980.00),
-        ("INFY.NSE", 1450.25),
-        ("HDFCBANK.NSE", 1520.10),
+        ("BTC/USDT", 65000.00),
+        ("ETH/USDT", 3500.00),
+        ("SOL/USDT", 140.00),
     ];
 
     let mut rng = rand::thread_rng();

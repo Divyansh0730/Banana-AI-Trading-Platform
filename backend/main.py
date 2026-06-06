@@ -11,7 +11,8 @@ from typing import List, Optional
 import database
 import models
 
-SUPPORTED_ASSETS = {"RELIANCE.NSE", "TCS.NSE", "INFY.NSE", "HDFCBANK.NSE"}
+# Set of supported assets for AI Trading
+SUPPORTED_ASSETS = {"BTC/USDT", "ETH/USDT", "SOL/USDT"}
 USDT_INR_RATE = 83.5
 RISK_MULTIPLIERS = {
     "Conservative": 0.01,
@@ -404,14 +405,14 @@ async def websocket_endpoint(websocket: WebSocket, token: str = None):
                 
                 try:
                     await websocket.send_text(json.dumps(tick))
-                except Exception:
-                    print("Client disconnected, closing stream.")
+                except Exception as send_err:
+                    print(f"Client disconnected or send error: {repr(send_err)}", flush=True)
                     break
                     
             await asyncio.sleep(0.001) # Yield to event loop to maintain responsiveness
             
     except Exception as e:
-        print(f"Redis Sub Error: {repr(e)}")
+        print(f"Redis Sub Error: {repr(e)}", flush=True)
     finally:
         ai_task.cancel()
         if 'pubsub' in locals():
